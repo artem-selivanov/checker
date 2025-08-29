@@ -17,10 +17,10 @@ class PuppeteerHandler {
         const proxyServer = await this.setUpProxy(this.proxy)*/
         this.path = process.cwd().includes("OpenServer") ? "" : "/home/root/amazon/fin/"
         let settings = {headless: this.headless ? 'new' : false}
-        /*if (os.platform() !== 'win32') {
+        if (os.platform() !== 'win32') {
             settings.executablePath = "/snap/bin/chromium"
             settings.args = ['--no-sandbox']
-        }*/
+        }
         if (this.exist) {
             settings = {...settings, userDataDir, cacheDirectory}
         }
