@@ -4,6 +4,8 @@ let keys = require('../credentials/key.json');
 
 class SheetHandler {
     constructor(url) {
+        console.log(url)
+        console.log(url.split("/"))
         this.id = url.split("/")[5];
         //this.tab = tab;
         this.api
