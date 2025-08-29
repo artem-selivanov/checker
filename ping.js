@@ -1,8 +1,14 @@
 const PuppeteerHandler = require('./helpers/auto');
 const SheetHandler = require('./helpers/spreadsheet');
 const util = require('./helpers/util');
+const path = require('path');
+const path2 = process.cwd().indexOf("/root") > -1 ? "/root/checker" : "D:\\OpenServer\\domains\\ppcagency"
+require('dotenv').config({path: path.join(path2, `.env`)});
 const test = false;
-require('dotenv').config();
+
+
+
+
 const moment = require('moment')
 
 const s = new SheetHandler(process.env.SPREADSHEET);
