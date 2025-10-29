@@ -16,7 +16,7 @@ const letter = "D";
 (async function () {
     await p.initBrowser()
 
-    for (let sheetUrl of [process.env.SHEET1, process.env.SHEET2, process.env.SHEET3, process.env.SHEET4, process.env.SHEET5]) {
+    for (let sheetUrl of [process.env.SPREADSHEET]) {
 
         const s = new SheetHandler(sheetUrl);
         const arr = await s.getValues('Accounts')
