@@ -23,6 +23,7 @@ const letter = "D";
         const tabUpdate = []
         const logs = []
         for (let [name, url, expire, ping, whois, ssl, token, chat] of arr.splice(1)) {
+            if (url=='') continue
             let status = false
             let message = ""
             try {
@@ -35,9 +36,10 @@ const letter = "D";
             }
             const curTime = moment().format('DD.MM.YYYY HH:mm');
             tabUpdate.push([curTime])
-            logs.push([curTime, 'Ping', url, message])
+            logs.push([curTime, 'Ping', url,status?'OK':'ERROR', message])
             if (status) continue
-            await util.sendMessage(`Проблема з ping домена ${url}: ${message}`, chat, token)
+            console.log(`Проблема з ping домена ${url}: ${message}`)
+            //await util.sendMessage(`Проблема з ping домена ${url}: ${message}`, chat, token)
         }
         if (tabUpdate.length > 0) {
             await s.setValues('Accounts', tabUpdate, `${letter}2`)

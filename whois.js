@@ -16,8 +16,14 @@ const letter = "E";
         const logs = []
         const expireDates = []
         for (let [name, url, expire, ping, whois, ssl, token, chat] of arr.splice(1)) {
+            if (url=='') continue
+            if (url.includes('.net.ua')||url.includes('.kh.ua')||url.includes('.in.ua')||url.includes('.md')||'1.ua.in') {
+                expireDates.push([""])
+                continue
+            }
             let status = false
             let message = ""
+
             if (util.whoisCheck(expire)) {
                 try {
                     const data = await util.getWhois(process.env.WHOIS, url)
@@ -34,9 +40,10 @@ const letter = "E";
             }
             const curTime = moment().format('DD.MM.YYYY HH:mm');
             tabUpdate.push([curTime])
-            logs.push([curTime, 'Whois', url, message])
+            logs.push([curTime, 'Whois', url, status?'OK':'ERROR',message])
+
             if (status) continue
-            await util.sendMessage(`Проблема з Whois домена ${url}: ${message}`, chat, token)
+            //await util.sendMessage(`Проблема з Whois домена ${url}: ${message}`, chat, token)
         }
         if (tabUpdate.length > 0) {
             await s.setValues('Accounts', tabUpdate, `${letter}2`)
@@ -49,3 +56,4 @@ const letter = "E";
 async function check(){
     return {status:false}
 }
+

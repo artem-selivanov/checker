@@ -64,26 +64,49 @@ async function sslCheck(url, port = 443) {
 }
 
 async function getWhois(apiKey, url) {
-    const domain = url.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
-    try {
-        const response = await fetch(`https://api.jsonwhoisapi.com/v1/whois?identifier=${domain}`, {
-            headers: {
-                'Authorization': apiKey
-            }
-        });
+    const domain = url
+        .replace(/^https?:\/\//, "")
+        .replace(/\/.*$/, "");
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    try {
+        const response = await axios.get(
+            `https://api.jsonwhoisapi.com/v1/whois`,
+            {
+                params: { identifier: domain },
+                headers: {
+                    "Authorization": apiKey
+                }
+            }
+        );
+
+        const data = response.data;
+        console.log(data)
+        await sleep(15000)
+        if (!data.registered) {
+            return { status: false, message: "Домен незареєстрований", expire: "" };
         }
 
-        const data = await response.json();
-        if (!data.registered) return {status:false, message:"Домен незареєстрований", expire:""}
-        if (whoisCheck(data.expires)) return {status:false, message:`Домен треба продовжити до ${data.expires}`, expire:data.expires}
-        return {status:true, message:`Все ок, дата закінчення терміну дії домену - ${data.expires}`, expire:data.expires}
+        if (whoisCheck(data.expires)) {
+            return {
+                status: false,
+                message: `Домен треба продовжити до ${data.expires}`,
+                expire: data.expires
+            };
+        }
+
+        return {
+            status: true,
+            message: `Все ок, дата закінчення терміну дії домену — ${data.expires}`,
+            expire: data.expires
+        };
 
     } catch (error) {
-        console.error('Error fetching WHOIS data:', error);
-        return {status:false, message:error.toString(), expire:""}
+        console.error("Error fetching WHOIS data:", error);
+        return {
+            status: false,
+            message: error.toString(),
+            expire: ""
+        };
     }
 }
 
@@ -109,6 +132,6 @@ function whoisCheck(date){
 
 }
 
-
+const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
 module.exports = {sendMessage, sslCheck, getWhois, whoisCheck}
