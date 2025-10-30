@@ -67,7 +67,7 @@ async function getWhois(apiKey, url) {
     const domain = url
         .replace(/^https?:\/\//, "")
         .replace(/\/.*$/, "");
-
+    await sleep(20000)
     try {
         const response = await axios.get(
             `https://api.jsonwhoisapi.com/v1/whois`,
@@ -81,7 +81,7 @@ async function getWhois(apiKey, url) {
 
         const data = response.data;
         console.log(data)
-        await sleep(15000)
+
         if (!data.registered) {
             return { status: false, message: "Домен незареєстрований", expire: "" };
         }
