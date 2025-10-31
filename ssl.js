@@ -11,7 +11,7 @@ const letter = "F";
 (async function () {
 
     for (let sheetUrl of [process.env.SPREADSHEET]) {
-
+        const texts = []
         const s = new SheetHandler(sheetUrl);
 
         const arr = await s.getValues('Accounts')
@@ -34,11 +34,15 @@ const letter = "F";
             tabUpdate.push([curTime])
             logs.push([curTime, 'SSL', url,status?'OK':'ERROR', message])
             if (status) continue
+            texts.push(`Проблема з SSL домена ${url}`)
             //await util.sendMessage(`Проблема з whois домена ${url}`, chat, token)
         }
         if (tabUpdate.length > 0) {
             await s.setValues('Accounts', tabUpdate, `${letter}2`)
             await s.addRows(logs, 'Logs')//.setValues('Accounts',tabUpdate,`${letter}2`)
+        }
+        if (texts.length>0){
+            await util.sendMessage(texts.join("\n"), arr[0][7], arr[0][6])
         }
     }
     //console.log(arr)
