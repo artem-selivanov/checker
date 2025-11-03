@@ -42,7 +42,7 @@ const letter = "F";
             await s.addRows(logs, 'Logs')//.setValues('Accounts',tabUpdate,`${letter}2`)
         }
         if (texts.length>0){
-            await util.sendMessage(texts.join("\n"), arr[0][7], arr[0][6])
+            await util.sendMessage(texts.join("\n"), arr[1][7], arr[1][6])
         }
     }
     //console.log(arr)
