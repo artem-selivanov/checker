@@ -9,10 +9,13 @@ const letter = "E";
 
 (async function () {
     //[process.env.SHEET1, process.env.SHEET2, process.env.SHEET3, process.env.SHEET4, process.env.SHEET5]
+
     for (let sheetUrl of [process.env.SPREADSHEET]) {
         const texts = []
         const s = new SheetHandler(sheetUrl);
         const arr = await s.getValues('Accounts')
+        //console.log({token: arr[1][7], chat:arr[1][6]})
+        //return
         const tabUpdate = []
         const logs = []
         const expireDates = []
@@ -46,6 +49,7 @@ const letter = "E";
 
             if (status) continue
             texts.push(`Проблема з Whois домена ${url}: ${message}`)
+            break;
             //await util.sendMessage(`Проблема з Whois домена ${url}: ${message}`, chat, token)
         }
         if (tabUpdate.length > 0) {
