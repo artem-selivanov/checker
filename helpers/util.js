@@ -70,7 +70,7 @@ async function getWhois(apiKey, url) {
 
 
         let data = null
-        for (let i = 1; i < 5; i++) {
+        for (let i = 1; i < 3; i++) {
             let response
             try {
             response = await axios.get(
@@ -83,6 +83,7 @@ async function getWhois(apiKey, url) {
                 }
             );
             } catch (error) {
+                console.error({domain})
                 console.error("Error fetching WHOIS data:", error.toString());
                 await sleep(120000)
                 continue
