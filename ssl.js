@@ -17,7 +17,7 @@ const letter = "F";
         const arr = await s.getValues('Accounts')
         const tabUpdate = []
         const logs = []
-        for (let [name, url, expire, ping, whois, ssl, token, chat] of arr.splice(1)) {
+        for (let [name, url, expire, ping, whois, ssl, token, chat] of arr.slice(1)) {
             if (url=='') continue
             let status = false
             let message = ""
