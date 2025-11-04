@@ -84,14 +84,14 @@ async function getWhois(apiKey, url) {
             );
             } catch (error) {
                 console.error("Error fetching WHOIS data:", error.toString());
-                await sleep(60000)
+                await sleep(120000)
                 continue
             }
             data = response.data;
             console.log(data)
             if (!data.throttled) break;
             console.log(`throttled`)
-            await sleep(60000)
+            await sleep(120000)
             console.log(`Waited 60 sec`)
         }
         await sleep(10000)
