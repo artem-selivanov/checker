@@ -14,9 +14,7 @@ const letter = "E";
         const texts = []
         const s = new SheetHandler(sheetUrl);
         const arr = await s.getValues('Accounts')
-        console.log({token: arr[1][7], chat:arr[1][6]})
 
-        return
         //return
         const tabUpdate = []
         const logs = []
@@ -59,6 +57,7 @@ const letter = "E";
             await s.setValues('Accounts', expireDates, `C2`)
             await s.addRows(logs, 'Logs')//.setValues('Accounts',tabUpdate,`${letter}2`)
         }
+        console.log({token: arr[1][7], chat:arr[1][6], row:arr[1]})
         if (texts.length>0){
             await util.sendMessage(texts.join("\n"), arr[1][7], arr[1][6])
         }
