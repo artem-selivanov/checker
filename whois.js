@@ -21,7 +21,7 @@ const letter = "E";
         const expireDates = []
         for (let [name, url, expire, ping, whois, ssl, token, chat] of arr.slice(1)) {
             if (url=='') continue
-            if (url.includes('.net.ua')||url.includes('.kh.ua')||url.includes('.in.ua')||url.includes('.md')||url=='https://1ua.in/ua/') {
+            if (url.includes('.net.ua')||url.includes('.shop')||url.includes('.kh.ua')||url.includes('.in.ua')||url.includes('.md')||url=='https://1ua.in/ua/') {
                 expireDates.push([""])
                 continue
             }

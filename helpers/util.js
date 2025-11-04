@@ -85,7 +85,7 @@ async function getWhois(apiKey, url) {
             } catch (error) {
                 console.error({domain})
                 console.error("Error fetching WHOIS data:", error.toString());
-                await sleep(120000)
+                await sleep(30000)
                 continue
             }
             data = response.data;
