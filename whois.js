@@ -49,7 +49,7 @@ const letter = "E";
 
             if (status) continue
             texts.push(`Проблема з Whois домена ${url}: ${message}`)
-            break;
+            //break;
             //await util.sendMessage(`Проблема з Whois домена ${url}: ${message}`, chat, token)
         }
         if (tabUpdate.length > 0) {
