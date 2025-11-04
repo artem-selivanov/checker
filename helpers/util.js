@@ -94,7 +94,7 @@ async function getWhois(apiKey, url) {
             await sleep(60000)
             console.log(`Waited 60 sec`)
         }
-
+        await sleep(10000)
 
         if (!data.registered) {
             return {status: false, message: "Домен незареєстрований", expire: ""};
