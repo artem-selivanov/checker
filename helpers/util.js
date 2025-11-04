@@ -1,7 +1,7 @@
 const axios = require("axios");
 const tls = require('tls');
 
-async function sendMessage(sendData, id, bot, parse_mode='Markdown') {
+async function sendMessage(sendData, id, bot, parse_mode = 'Markdown') {
     const text = await Promise.resolve(sendData);
     //console.log('here')
     //50909827
@@ -15,8 +15,8 @@ async function sendMessage(sendData, id, bot, parse_mode='Markdown') {
         .then((res) => {
             //console.log(res)
         }).catch((err) => {
-        console.error(err);
-    });
+            console.error(err);
+        });
 }
 
 async function sslCheck(url, port = 443) {
@@ -67,23 +67,30 @@ async function getWhois(apiKey, url) {
     const domain = url
         .replace(/^https?:\/\//, "")
         .replace(/\/.*$/, "");
-    await sleep(20000)
-    try {
-        const response = await axios.get(
-            `https://api.jsonwhoisapi.com/v1/whois`,
-            {
-                params: { identifier: domain },
-                headers: {
-                    "Authorization": apiKey
-                }
-            }
-        );
 
-        const data = response.data;
-        console.log(data)
+    try {
+        let data = null
+        for (let i = 1; i < 5; i++) {
+            const response = await axios.get(
+                `https://api.jsonwhoisapi.com/v1/whois`,
+                {
+                    params: {identifier: domain},
+                    headers: {
+                        "Authorization": apiKey
+                    }
+                }
+            );
+            data = response.data;
+            console.log(data)
+            if (!data.throttled) break;
+            console.log(`throttled`)
+            await sleep(60000)
+            console.log(`Waited 60 sec`)
+        }
+
 
         if (!data.registered) {
-            return { status: false, message: "Домен незареєстрований", expire: "" };
+            return {status: false, message: "Домен незареєстрований", expire: ""};
         }
 
         if (whoisCheck(data.expires)) {
@@ -110,8 +117,8 @@ async function getWhois(apiKey, url) {
     }
 }
 
-function whoisCheck(date){
-    if (date=='') return true
+function whoisCheck(date) {
+    if (date == '') return true
     const targetDate = new Date(date);
     const now = new Date();
 

@@ -14,7 +14,9 @@ const letter = "E";
         const texts = []
         const s = new SheetHandler(sheetUrl);
         const arr = await s.getValues('Accounts')
-        //console.log({token: arr[1][7], chat:arr[1][6]})
+        console.log({token: arr[1][7], chat:arr[1][6]})
+
+        return
         //return
         const tabUpdate = []
         const logs = []
