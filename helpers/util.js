@@ -68,10 +68,12 @@ async function getWhois(apiKey, url) {
         .replace(/^https?:\/\//, "")
         .replace(/\/.*$/, "");
 
-    try {
+
         let data = null
         for (let i = 1; i < 5; i++) {
-            const response = await axios.get(
+            let response
+            try {
+            response = await axios.get(
                 `https://api.jsonwhoisapi.com/v1/whois`,
                 {
                     params: {identifier: domain},
@@ -80,6 +82,11 @@ async function getWhois(apiKey, url) {
                     }
                 }
             );
+            } catch (error) {
+                console.error("Error fetching WHOIS data:", error.toString());
+                await sleep(60000)
+                continue
+            }
             data = response.data;
             console.log(data)
             if (!data.throttled) break;
@@ -107,14 +114,7 @@ async function getWhois(apiKey, url) {
             expire: data.expires
         };
 
-    } catch (error) {
-        console.error("Error fetching WHOIS data:", error);
-        return {
-            status: false,
-            message: error.toString(),
-            expire: ""
-        };
-    }
+
 }
 
 function whoisCheck(date) {
