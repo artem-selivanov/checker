@@ -67,7 +67,7 @@ const letter = "E";
 
         if (texts.length>0){
             //console.log(texts.join("\n"))
-            //await util.sendMessage(texts.join("\n"), arr[1][7], arr[1][6])
+            await util.sendMessage(texts.join("\n"), arr[1][7], arr[1][6])
         }
     }
 })()
