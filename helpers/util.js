@@ -1,5 +1,6 @@
 const axios = require("axios");
 const tls = require('tls');
+const { exec } = require('child_process');
 
 async function sendMessage(sendData, id, bot, parse_mode = 'Markdown') {
     const text = await Promise.resolve(sendData);
@@ -64,6 +65,64 @@ async function sslCheck(url, port = 443) {
 }
 
 async function getWhois(apiKey, url) {
+    // apiKey оставляем в сигнатуре для совместимости, но не используем
+    const domain = url
+        .replace(/^https?:\/\//, '')
+        .replace(/\/.*$/, '');
+
+    let whoisOutput = null;
+
+    // Простой ретрай на случай временного сбоя сети / whois-сервера
+    for (let i = 1; i <= 3; i++) {
+        try {
+            whoisOutput = await execWhois(domain);
+            break;
+        } catch (error) {
+            console.error({ domain });
+            console.error('Error running whois:', error.toString());
+            if (i === 3) {
+                // после последней попытки — кидаем ошибку наверх или возвращаем статус
+                return {
+                    status: false,
+                    message: 'Не вдалось отримати WHOIS для домену (whois помилка)',
+                    expire: '',
+                };
+            }
+            await sleep(30000); // как у тебя было
+        }
+    }
+
+    if (!isRegistered(whoisOutput)) {
+        return { status: false, message: 'Домен незареєстрований', expire: '' };
+    }
+
+    const expires = parseExpiryFromWhois(whoisOutput);
+
+    if (!expires) {
+        // Дата не найдена — зона скрывает или нестандартный формат
+        return {
+            status: true,
+            message: 'WHOIS не містить явної дати закінчення домену',
+            expire: '',
+        };
+    }
+
+    if (whoisCheck(expires)) {
+        return {
+            status: false,
+            message: `Домен треба продовжити до ${expires}`,
+            expire: expires,
+        };
+    }
+
+    return {
+        status: true,
+        message: `Все ок, дата закінчення терміну дії домену — ${expires}`,
+        expire: expires,
+    };
+}
+
+async function getWhoisOld(apiKey, url) {
     const domain = url
         .replace(/^https?:\/\//, "")
         .replace(/\/.*$/, "");
@@ -138,6 +197,59 @@ function whoisCheck(date) {
         console.log('До даты больше месяца.');
     }*/
 
+}
+
+function execWhois(domain) {
+    return new Promise((resolve, reject) => {
+        exec(`whois ${domain}`, { maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+            if (error) {
+                return reject(error);
+            }
+            resolve(stdout.toString());
+        });
+    });
+}
+
+function parseExpiryFromWhois(output) {
+    const patterns = [
+        /Registry Expiry Date:\s*([0-9T:\-\.Z ]+)/i,
+        /Expiration Date:\s*([0-9T:\-\.Z ]+)/i,
+        /Expiry Date:\s*([0-9T:\-\.Z ]+)/i,
+        /paid-till:\s*([0-9T:\-\.Z ]+)/i,
+        /expires:\s*([0-9T:\-\.Z ]+)/i,
+    ];
+
+    for (const re of patterns) {
+        const m = output.match(re);
+        if (m) {
+            let raw = m[1].trim();
+
+            // Попробуем привести к нормальной дате
+            // Если Date её ест — вернём YYYY-MM-DD
+            const d = new Date(raw);
+            if (!isNaN(d.getTime())) {
+                return d.toISOString().slice(0, 10); // "YYYY-MM-DD"
+            }
+
+            // Популярный формат в .ru/.su: YYYY.MM.DD
+            if (/^\d{4}\.\d{2}\.\d{2}$/.test(raw)) {
+                return raw.replace(/\./g, '-'); // "YYYY-MM-DD"
+            }
+
+            // Если ничего не смогли — вернём как есть
+            return raw;
+        }
+    }
+
+    return null;
+}
+
+function isRegistered(output) {
+    // Простейшая эвристика: если есть "No match" / "NOT FOUND" и т.п. — не зарегистрирован
+    if (/No match for/i.test(output)) return false;
+    if (/NOT FOUND/i.test(output)) return false;
+    if (/Status:\s*free/i.test(output)) return false;
+    return true;
 }
 
 const sleep = (ms) => new Promise(res => setTimeout(res, ms));

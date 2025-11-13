@@ -31,6 +31,7 @@ const letter = "E";
             if (util.whoisCheck(expire)) {
                 try {
                     const data = await util.getWhois(process.env.WHOIS, url)
+                    console.log(data)
                     status = data.status
                     message = data.message
                     expireDates.push([data.expire])
@@ -58,9 +59,11 @@ const letter = "E";
             await s.addRows(logs, 'Logs')//.setValues('Accounts',tabUpdate,`${letter}2`)
         }
 
+        console.log(texts.join("\n"))
+
         if (texts.length>0){
             console.log(texts.join("\n"))
-            await util.sendMessage(texts.join("\n"), arr[1][7], arr[1][6])
+            //await util.sendMessage(texts.join("\n"), arr[1][7], arr[1][6])
         }
     }
 })()
