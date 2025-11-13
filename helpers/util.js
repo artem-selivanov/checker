@@ -104,6 +104,7 @@ async function getWhois(apiKey, url) {
             status: true,
             message: 'WHOIS не містить явної дати закінчення домену',
             expire: '',
+            url,
         };
     }
 
