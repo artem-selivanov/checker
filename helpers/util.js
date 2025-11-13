@@ -88,7 +88,7 @@ async function getWhois(apiKey, url) {
                     expire: '',
                 };
             }
-            await sleep(30000); // как у тебя было
+            await sleep(5000); // как у тебя было
         }
     }
 
