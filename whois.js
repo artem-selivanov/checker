@@ -25,6 +25,10 @@ const letter = "E";
                 expireDates.push([""])
                 continue
             }*/
+            if (url=='https://1ua.in/ua/') {
+                expireDates.push([""])
+                continue
+            }
             let status = false
             let message = ""
 
