@@ -65,10 +65,10 @@ const letter = "E";
 
         console.log(texts.join("\n"))
 
-        /*if (texts.length>0){
+        if (texts.length>0){
             //console.log(texts.join("\n"))
             await util.sendMessage(texts.join("\n"), arr[1][7], arr[1][6])
-        }*/
+        }
     }
 })()
 
