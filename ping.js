@@ -14,6 +14,7 @@ const p = new PuppeteerHandler(test ? false : true);
 const letter = "D";
 
 (async function () {
+    try {
     await p.initBrowser()
 
     for (let sheetUrl of [process.env.SPREADSHEET]) {
@@ -51,7 +52,9 @@ const letter = "D";
         }
     }
     //console.log(arr)
-    await p.closeBrowser()
+    } finally {
+        await p.closeBrowser()
+    }
 })()
 
 async function check() {

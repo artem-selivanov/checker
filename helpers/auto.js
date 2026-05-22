@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
+const fs = require('fs');
 const path = require('path');
 const os = require('os');
 //const input = require("input");
@@ -10,6 +11,7 @@ class PuppeteerHandler {
         this.browser = null;
         this.page = null;
         this.headless = headless;
+        this.userDataDir = null;
     }
 
     async initBrowser() {
@@ -18,15 +20,33 @@ class PuppeteerHandler {
         this.path = process.cwd().includes("OpenServer") ? "" : "/home/root/amazon/fin/"
         let settings = {headless: this.headless ? 'new' : false}
         if (os.platform() !== 'win32') {
-            settings.executablePath = "/snap/bin/chromium"
-            settings.args = ['--no-sandbox']
-        }
-        if (this.exist) {
-            settings = {...settings, userDataDir, cacheDirectory}
+            const tmpDir = process.env.CHECKER_TMP_DIR || '/tmp';
+            this.userDataDir = fs.mkdtempSync(path.join(tmpDir, 'checker-chrome-'));
+
+            settings = {
+                ...settings,
+                userDataDir: this.userDataDir,
+                env: {...process.env, TMPDIR: tmpDir},
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--no-first-run',
+                    '--no-default-browser-check',
+                ],
+            }
+
+            const executablePath = getChromeExecutablePath();
+            if (executablePath) settings.executablePath = executablePath;
         }
         //console.log({"Pupperteer Settings":settings})
         //console.log('-'.repeat(100))
-        this.browser = await puppeteer.launch(settings);
+        try {
+            this.browser = await puppeteer.launch(settings);
+        } catch (err) {
+            this.cleanupUserDataDir();
+            throw err;
+        }
         this.page = await this.browser.newPage();
         await this.page.setViewport({
             width: 1920,
@@ -35,7 +55,21 @@ class PuppeteerHandler {
     }
 
     async closeBrowser() {
-        await this.browser.close();
+        try {
+            if (this.browser) {
+                await this.browser.close();
+            }
+        } finally {
+            this.browser = null;
+            this.page = null;
+            this.cleanupUserDataDir();
+        }
+    }
+
+    cleanupUserDataDir() {
+        if (!this.userDataDir) return;
+        fs.rmSync(this.userDataDir, {recursive: true, force: true});
+        this.userDataDir = null;
     }
 
 
@@ -70,6 +104,30 @@ class PuppeteerHandler {
 
 
 module.exports = PuppeteerHandler
+
+function getChromeExecutablePath() {
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        return process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+
+    if (typeof puppeteer.executablePath === 'function') {
+        try {
+            const executablePath = puppeteer.executablePath();
+            if (executablePath && fs.existsSync(executablePath)) {
+                return executablePath;
+            }
+        } catch (err) {
+            // Fall back to system Chromium below.
+        }
+    }
+
+    if (fs.existsSync('/snap/bin/chromium')) return '/snap/bin/chromium';
+    if (fs.existsSync('/usr/bin/chromium-browser')) return '/usr/bin/chromium-browser';
+    if (fs.existsSync('/usr/bin/chromium')) return '/usr/bin/chromium';
+    if (fs.existsSync('/usr/bin/google-chrome')) return '/usr/bin/google-chrome';
+
+    return null;
+}
 
 function ensureHttps(url) {
     if (!/^https?:\/\//i.test(url)) {
