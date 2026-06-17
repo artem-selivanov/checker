@@ -12,6 +12,7 @@ class PuppeteerHandler {
         this.page = null;
         this.headless = headless;
         this.userDataDir = null;
+        this.tmpDir = null;
     }
 
     async initBrowser() {
@@ -20,17 +21,20 @@ class PuppeteerHandler {
         this.path = process.cwd().includes("OpenServer") ? "" : "/home/root/amazon/fin/"
         let settings = {headless: this.headless ? 'new' : false}
         if (os.platform() !== 'win32') {
-            const tmpDir = process.env.CHECKER_TMP_DIR || '/tmp';
+            const tmpDir = process.env.CHECKER_TMP_DIR || path.join(process.cwd(), '.chrome-tmp');
+            fs.mkdirSync(tmpDir, {recursive: true, mode: 0o700});
+            this.tmpDir = tmpDir;
             this.userDataDir = fs.mkdtempSync(path.join(tmpDir, 'checker-chrome-'));
 
             settings = {
                 ...settings,
                 userDataDir: this.userDataDir,
-                env: {...process.env, TMPDIR: tmpDir},
+                env: {...process.env, TMPDIR: tmpDir, TMP: tmpDir, TEMP: tmpDir},
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
+                    '--disable-gpu',
                     '--no-first-run',
                     '--no-default-browser-check',
                 ],
@@ -41,6 +45,14 @@ class PuppeteerHandler {
         }
         //console.log({"Pupperteer Settings":settings})
         //console.log('-'.repeat(100))
+        if (process.env.CHECKER_DEBUG_CHROME === '1') {
+            console.log({
+                chromeTmpDir: this.tmpDir,
+                chromeUserDataDir: this.userDataDir,
+                chromeExecutablePath: settings.executablePath,
+                chromeArgs: settings.args,
+            });
+        }
         try {
             this.browser = await puppeteer.launch(settings);
         } catch (err) {
@@ -121,7 +133,6 @@ function getChromeExecutablePath() {
         }
     }
 
-    if (fs.existsSync('/snap/bin/chromium')) return '/snap/bin/chromium';
     if (fs.existsSync('/usr/bin/chromium-browser')) return '/usr/bin/chromium-browser';
     if (fs.existsSync('/usr/bin/chromium')) return '/usr/bin/chromium';
     if (fs.existsSync('/usr/bin/google-chrome')) return '/usr/bin/google-chrome';
