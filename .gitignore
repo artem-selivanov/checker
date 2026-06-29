@@ -5,3 +5,6 @@ node_modules/
 assets/
 logs/
 .chrome-tmp/
+credentials/
+google-service-account*.json
+service-account*.json

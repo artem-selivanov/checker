@@ -66,6 +66,22 @@ class PuppeteerHandler {
         });
     }
 
+    async restartBrowser() {
+        console.log('Перезапуск браузера: закрываю текущий экземпляр и создаю новый.');
+        try {
+            if (this.browser) {
+                await this.browser.close();
+            }
+        } catch (error) {
+            console.log('Не удалось корректно закрыть браузер перед перезапуском', error?.message || error);
+        }
+
+        this.browser = null;
+        this.page = null;
+
+        await this.initBrowser();
+    }
+
     async closeBrowser() {
         try {
             if (this.browser) {
@@ -85,23 +101,81 @@ class PuppeteerHandler {
     }
 
 
-    async chekSite(site) {
+    async chekSite(site, options = {}) {
+        const retries = options.retries ?? 3;
+        const delayMs = options.delayMs ?? 3000;
+        let timeoutStreak = 0;
+
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            console.log(`[Ping] ${site} — попытка ${attempt} из ${retries}`);
+            const result = await this.checkSiteOnce(site);
+
+            if (result.status) {
+                console.log(`[Ping] ${site} — успешно на попытке ${attempt}`);
+                return result;
+            }
+
+            console.log(
+                `[Ping] ${site} — ошибка на попытке ${attempt}: ${result.text}` +
+                `${result.code ? ` [${result.code}]` : ''}` +
+                `, retryable=${result.retryable === true}`
+            );
+
+            if (result.code === 'TIMEOUT') {
+                timeoutStreak += 1;
+                console.log(`[Ping] ${site} — таймаут подряд: ${timeoutStreak}`);
+            } else {
+                timeoutStreak = 0;
+            }
+
+            if (timeoutStreak >= 2 && attempt < retries) {
+                console.log(`[Ping] ${site} — два таймаута подряд. Перезапускаю браузер перед следующей попыткой.`);
+                await this.restartBrowser();
+                timeoutStreak = 0;
+            }
+
+            if (!result.retryable || attempt === retries) {
+                return {
+                    status: false,
+                    text: attempt > 1 ? `${result.text} (после ${attempt} попыток)` : result.text,
+                };
+            }
+
+            console.log(`[Ping] ${site} — жду ${delayMs} мс перед следующей попыткой.`);
+            await this.waitInSeconds(delayMs / 1000);
+        }
+
+        return {status: false, text: 'Невідома помилка перевірки сайту'};
+    }
+
+    async checkSiteOnce(site) {
         try {
             const url = ensureHttps(site)
-            const response = await this.page.goto(url)
+            const response = await this.page.goto(url, {
+                waitUntil: 'domcontentloaded',
+                timeout: 15000,
+            })
             await this.waitInSeconds(5)
+            if (!response) {
+                return {
+                    status: false,
+                    text: 'Не отримано відповідь від сторінки',
+                    code: 'NO_RESPONSE',
+                    retryable: true,
+                }
+            }
             const status = response.status();
             if (status !== 200) {
-                return {status: false, text: `Отримана відповідь від серверу ${status}`}
+                return {status: false, text: `Отримана відповідь від серверу ${status}`, code: 'HTTP_STATUS', retryable: false}
             }
             const title = await this.page.title();
             if (!title || title.trim() === '') {
-                return {status: false, text: `Відсутній title`}
+                return {status: false, text: `Відсутній title`, code: 'EMPTY_TITLE', retryable: false}
             }
-            console.log({title})
+            //console.log({title})
             return {status: true, text: `Все ок`}
         } catch (err) {
-            return {status: false, text: `Проблема DNS`}
+            return classifyNavigationError(err)
         }
     }
 
@@ -145,4 +219,31 @@ function ensureHttps(url) {
         return 'https://' + url;
     }
     return url;
+}
+function classifyNavigationError(err) {
+    const message = (err && err.message ? err.message : err?.toString?.() || '').toLowerCase();
+
+    if (message.includes('err_name_not_resolved') || message.includes('enotfound')) {
+        return {status: false, text: 'Проблема DNS', code: 'DNS', retryable: false};
+    }
+
+    if (message.includes('timeout') || message.includes('navigation timeout')) {
+        return {status: false, text: 'Таймаут завантаження', code: 'TIMEOUT', retryable: true};
+    }
+
+    if (message.includes('err_cert') || message.includes('ssl')) {
+        return {status: false, text: 'Проблема SSL', code: 'SSL', retryable: false};
+    }
+
+    if (
+        message.includes('err_connection_reset') ||
+        message.includes('err_connection_refused') ||
+        message.includes('err_connection_closed') ||
+        message.includes('err_connection_failed') ||
+        message.includes('err_network_changed')
+    ) {
+        return {status: false, text: 'Проблема з\'єднання', code: 'CONNECTION', retryable: true};
+    }
+
+    return {status: false, text: 'Невідома помилка завантаження', code: 'UNKNOWN', retryable: true};
 }
